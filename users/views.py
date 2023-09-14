@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User
 from datetime import datetime
-import jwt
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -25,33 +24,9 @@ def register_user(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
     
 
-
-class LoginView(APIView):
-    def post(self,request):
-        email = request.data["email"]
-        password = request.data["password"]
-
-        user = User.objects.filter(email=email).first()
-
-        if user is None:
-            raise AuthenticationFailed("User not found")
-
-        if not user.check_password(password):
-            raise AuthenticationFailed("Incorrect password")
-        
-
-        payload = {
-            "id": user.id,
-            "exp": datetime.utcnow() + datetime.timedelta(minute=60),
-            "iat": datetime.utcnow()
-        }
-        token = jwt.encode(payload,"secret", algorithm="HS256").decode("utf-8")
-
-        res = Response()
-        res.data = {
-            token
-        }
-        return res
+@api_view(['POST'])
+def login(request):
+    pass
     
 
 @api_view(['GET'])
