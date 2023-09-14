@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,10 +38,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
-
+    "rest_framework",
+    "rest_framework_simplejwt",
     #apps
-    "projects.apps.ProjectsConfig"
+    "projects.apps.ProjectsConfig",
+    "users.apps.UsersConfig"
 ]
 
 MIDDLEWARE = [
@@ -71,6 +73,23 @@ TEMPLATES = [
             ],
         },
     },
+]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    'SLIDING_TOKEN_LIFETIME': timedelta(days=7),
+    'SLIDING_TOKEN_REFRESH_LIFETIME_GRACE_PERIOD': timedelta(days=2),
+}
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Use the default ModelBackend for authentication.
 ]
 
 WSGI_APPLICATION = "myFirstDjangoProject.wsgi.application"
@@ -123,7 +142,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+AUTH_USER_MODEL = "users.User"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:9000",
+]
