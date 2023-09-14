@@ -3,8 +3,7 @@ from .serializer import UserSerializer
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User
-from datetime import datetime
-from django.db import IntegrityError
+from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -26,20 +25,27 @@ def register_user(request):
 
 @api_view(['POST'])
 def login(request):
-    pass
+    if request.method == 'POST':
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            return Response({'access_token': access_token, 'refresh_token': refresh_token}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def UserView(request):
+def getUser(request):
    user = request.user 
    try:
-        user_profile = user.userprofile  
         data = {
             'username': user.username,
             'email': user.email,
-            'bio': user_profile.bio if hasattr(user, 'userprofile') else "",
-            # Add other user-related fields here
         }
         return Response(data)
    except User.DoesNotExist:

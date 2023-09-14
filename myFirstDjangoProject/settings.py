@@ -88,6 +88,10 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME_GRACE_PERIOD': timedelta(days=2),
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Use the default ModelBackend for authentication.
+]
+
 WSGI_APPLICATION = "myFirstDjangoProject.wsgi.application"
 
 
