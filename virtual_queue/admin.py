@@ -5,3 +5,4 @@ from .models import Services,Queue
 
 admin.site.register(Services)
 admin.site.register(Queue)
+

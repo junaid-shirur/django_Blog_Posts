@@ -6,7 +6,7 @@ from users.models import User
 #     name = models.CharField(max_length=100)
 #     def __str__(self):
 #         return self.name
-
+from django.core.validators import MaxValueValidator
 
 class Services(models.Model):
     STATUS = (
@@ -14,30 +14,44 @@ class Services(models.Model):
         ("closed","CLOSED"))
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    location = models.CharField(max_length=100, null=True,blank=True)
-    operating_hours = models.CharField(max_length=100)
-    estimated_wait_time = models.PositiveIntegerField(blank=True)
+    address = models.CharField(max_length=100, null=True,blank=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
     service_details = models.TextField(blank=True)
     status = models.CharField(choices=STATUS, blank=True, max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return self.name
 
+class QueueParticipant(models.Model):
+    participant = models.ForeignKey(User,on_delete=models.CASCADE)
+    queue = models.ForeignKey("Queue", on_delete=models.CASCADE)
+    reservation_time = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('in_progress', 'In Progress'),
+            ('completed', 'Completed'),
+            ('canceled', 'Canceled'),
+        ],
+        default='pending',
+    )
+    joined_at = models.DateTimeField(auto_now_add=True)
+    exited_at = models.DateTimeField(null=True)
+
 class Queue(models.Model):
     STATUS = (
         ("open","OPEN"),
         ("closed","CLOSED"))
     estimated_wait_time = models.PositiveIntegerField(blank=True)
-    service_ref = models.ForeignKey(Services, on_delete=models.CASCADE)
+    service = models.OneToOneField(Services, on_delete=models.CASCADE)
     current_wait_time = models.DateTimeField()
-    max_capacity = models.IntegerField()
+    max_capacity = models.IntegerField(validators=[MaxValueValidator(20)])
     queue_status = models.CharField(choices=STATUS, max_length=10, blank=True)
-    current_queue_size = models.IntegerField(max_length=200)
-    queue_start_time = models.DateTimeField()
-    queue_end_time = models.DateTimeField()
-    participants = models.OneToOneField(User, on_delete=models.CASCADE)
-    location = models.CharField(max_length=255, null=True,blank=True)
-    description = models.TextField(max_length=400, blank=True)
+    current_queue_size = models.IntegerField()
+    participants = models.ManyToManyField(User, through=QueueParticipant)
 
     def __str__(self) -> str:
-        return self.service_ref.name
+        return f"Queue for the service {self.service_ref.name}"
+    
