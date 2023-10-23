@@ -1,5 +1,7 @@
 from django.db import models
 from users.models import User
+from datetime import datetime
+
 # Create your models here.
 
 # class Service_Details(models.Model):
@@ -20,8 +22,25 @@ class Services(models.Model):
     service_details = models.TextField(blank=True)
     status = models.CharField(choices=STATUS, blank=True, max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
+    def current_status(self):
+        current_time = datetime.now().time()
+        if self.start_time <= current_time <= self.end_time:
+            return "open"
+        else:
+            return "closed"
+        
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        current_time = datetime.now().time()
+
+        if self.start_time <= current_time <= self.end_time:
+            self.status = "open"
+        else:
+            self.status = "closed"
+
+        super().save(*args, **kwargs)
 
 class QueueParticipant(models.Model):
     participant = models.ForeignKey(User,on_delete=models.CASCADE)
