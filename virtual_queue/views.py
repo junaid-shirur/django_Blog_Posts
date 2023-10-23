@@ -15,3 +15,18 @@ def getServices(request):
     services = Services.objects.all()
     serializer = ServiceSerializer(services, many=True)
     return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def createService(request):
+    user = request.user
+    if not user:
+        return Response("Please login", status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == 'POST':
+        serializer = ServiceSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
