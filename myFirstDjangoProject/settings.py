@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     #apps
     "projects.apps.ProjectsConfig",
-    "users.apps.UsersConfig"
+    "users.apps.UsersConfig",
+    "virtual_queue.apps.VirtualQueueConfig"
 ]
 
 MIDDLEWARE = [
