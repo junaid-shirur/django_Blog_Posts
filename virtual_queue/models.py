@@ -62,7 +62,9 @@ class QueueParticipant(models.Model):
 class Queue(models.Model):
     STATUS = (
         ("open","OPEN"),
-        ("closed","CLOSED"))
+        ("closed","CLOSED"),
+        ("full","FULL"),
+        )
     estimated_wait_time = models.PositiveIntegerField(blank=True)
     service = models.OneToOneField(Services, on_delete=models.CASCADE)
     current_wait_time = models.DateTimeField()
