@@ -70,9 +70,9 @@ class Queue(models.Model):
     current_wait_time = models.DateTimeField()
     max_capacity = models.IntegerField(validators=[MaxValueValidator(20)])
     queue_status = models.CharField(choices=STATUS, max_length=10, blank=True)
-    current_queue_size = models.IntegerField()
+    current_queue_size = models.IntegerField(null=True)
     participants = models.ManyToManyField(User, through=QueueParticipant)
 
     def __str__(self) -> str:
-        return f"Queue for the service {self.service_ref.name}"
+        return f"Queue for the service {self.service.name}"
     
