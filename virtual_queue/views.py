@@ -6,6 +6,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from datetime import timedelta
+from django.db import transaction
+from django.db.models import F
+
 # Create your views here.
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -42,35 +46,45 @@ def joinQueue(request):
         return Response("Please provide a service_id in the request data", status=status.HTTP_400_BAD_REQUEST)
 
     service = get_object_or_404(Services, id=service_id)
-    
-    # Try to get an existing open queue or create a new one if not available
-    queue, created = Queue.objects.get_or_create(
-        service=service,
-        queue_status='open',
-        defaults={'max_capacity': 20, 'current_wait_time': timezone.now(), 'estimated_wait_time': 0}
-    )
-    if created:
-        # If the queue was created, increment current_queue_size
-        queue.current_queue_size += 1
-        queue.save()
 
-        if queue.current_queue_size >= queue.max_capacity:
-            return Response(f'The queue for the service {service.name if service.name else ""} is currently full', status=status.HTTP_400_BAD_REQUEST)
-    elif queue:
-        # If the queue already exists, increment current_queue_size
-        queue.current_queue_size += 1
-        queue.save()
-    else:
-        return Response(f'The queue for the service {service.name if service.name else ""} does not exist', status=status.HTTP_400_BAD_REQUEST)
+    try:
+        with transaction.atomic():
+            # Try to get an existing open queue or create a new one if not available
+            queue = Queue.objects.filter(
+                service=service,
+                queue_status='open',
+                current_queue_size__lt=F('max_capacity')
+            ).select_for_update().first()
 
-  
-    user_participation = QueueParticipant.objects.filter(participant=request.user, queue=queue).first()
+            if not queue:
+                # If the queue doesn't exist, create a new one
+                queue = Queue.objects.create(
+                    service=service,
+                    queue_status='open',
+                    max_capacity=20,
+                    current_wait_time=timezone.now(),
+                    estimated_wait_time=0,
+                    current_queue_size=0,
+                )
 
-    if user_participation:
-        return Response("User is already in the queue, wait your turn to come", status=status.HTTP_400_BAD_REQUEST)
+            if queue.current_queue_size >= queue.max_capacity:
+                return Response(f'The queue for the service {service.name if service.name else ""} is currently full', status=status.HTTP_400_BAD_REQUEST)
 
-    # Add your logic for joining the queue here, e.g., creating a QueueParticipant entry
-    QueueParticipant.objects.create(participant=request.user, queue=queue, status='pending')
+            user_participation = QueueParticipant.objects.filter(participant=request.user, queue=queue).first()
 
-    return Response("Successfully joined the queue", status=status.HTTP_200_OK)
+            if user_participation:
+                return Response("User is already in the queue, wait your turn to come", status=status.HTTP_400_BAD_REQUEST)
+
+            # Add your logic for joining the queue here, e.g., creating a QueueParticipant entry
+            QueueParticipant.objects.create(participant=request.user, queue=queue, status='pending')
+            # Increment current_queue_size atomically
+            queue.current_queue_size += 1
+            queue.estimated_wait_time += timedelta(minutes=5)
+            queue.save()
+            return Response("Successfully joined the queue", status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Handle any exceptions that may occur during the transaction
+        return Response(f"An error occurred: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
