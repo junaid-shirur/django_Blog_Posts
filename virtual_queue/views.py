@@ -62,9 +62,6 @@ def joinQueue(request):
                     service=service,
                     queue_status='open',
                     max_capacity=20,
-                    current_wait_time=timezone.now(),
-                    estimated_wait_time=0,
-                    current_queue_size=0,
                 )
 
             if queue.current_queue_size >= queue.max_capacity:
@@ -73,13 +70,14 @@ def joinQueue(request):
             user_participation = QueueParticipant.objects.filter(participant=request.user, queue=queue).first()
 
             if user_participation:
-                return Response("User is already in the queue, wait your turn to come", status=status.HTTP_400_BAD_REQUEST)
+                return Response("You've already join the queue, wait your turn to come", status=status.HTTP_400_BAD_REQUEST)
 
             # Add your logic for joining the queue here, e.g., creating a QueueParticipant entry
             QueueParticipant.objects.create(participant=request.user, queue=queue, status='pending')
             # Increment current_queue_size atomically
             queue.current_queue_size += 1
-            queue.estimated_wait_time += timedelta(minutes=5)
+            queue.current_wait_time += timedelta(minutes=5)
+            queue.estimated_wait_time = queue.current_queue_size - 1
             queue.save()
             return Response("Successfully joined the queue", status=status.HTTP_200_OK)
 
