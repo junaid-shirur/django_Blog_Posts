@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db import transaction
 from django.db.models import F
-
+import datetime
 # Create your views here.
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -41,12 +41,16 @@ def createService(request):
 @permission_classes([IsAuthenticated])
 def joinQueue(request):
     service_id = request.data.get('service_id')
-
-    if not service_id:
+    preferred_time = request.data.get('preferred_time')
+    if not service_id or not preferred_time:
         return Response("Please provide a service_id in the request data", status=status.HTTP_400_BAD_REQUEST)
 
     service = get_object_or_404(Services, id=service_id)
+    user_perfferred_time =  datetime.datetime.strptime(preferred_time, "%Y-%m-%dT%H:%M:%S.%fZ")
 
+    preferred_time_exist = get_object_or_404(Queue, service=service, preferred_time=user_perfferred_time)
+    if preferred_time_exist:
+        return Response(f'perferred time is already taken, please choose any other option')
     try:
         with transaction.atomic():
             # Try to get an existing open queue or create a new one if not available
@@ -72,7 +76,7 @@ def joinQueue(request):
             # Increment current_queue_size and update estimated_wait_time atomically
             queue.current_queue_size += 1
             queue.current_wait_time += timedelta(minutes=5)
-            queue.estimated_wait_time = queue.current_queue_size - 1 if queue.current_queue_size >= 2 else 1
+            queue.estimated_wait_time = queue.current_queue_size + 1 if queue.current_queue_size < 1 else 1
             queue.save()
 
             # Add your logic for joining the queue here, e.g., creating a QueueParticipant entry

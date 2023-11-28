@@ -46,6 +46,7 @@ class QueueParticipant(models.Model):
     participant = models.ForeignKey(User,on_delete=models.CASCADE)
     queue = models.ForeignKey("Queue", on_delete=models.CASCADE)
     reservation_time = models.DateTimeField(auto_now_add=True)
+    preferred_time = models.DateTimeField()
     status = models.CharField(
         max_length=20,
         choices=[
