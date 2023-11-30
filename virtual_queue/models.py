@@ -10,6 +10,12 @@ from datetime import datetime
 #         return self.name
 from django.core.validators import MaxValueValidator
 
+class Slot(models.Model):
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    capacity = models.IntegerField()
+    service = models.ForeignKey("Services", on_delete=models.CASCADE)
+
 class Services(models.Model):
     STATUS = (
         ("open","OPEN"),
@@ -42,11 +48,8 @@ class Services(models.Model):
 
         super().save(*args, **kwargs)
 
-class QueueParticipant(models.Model):
-    participant = models.ForeignKey(User,on_delete=models.CASCADE)
-    queue = models.ForeignKey("Queue", on_delete=models.CASCADE)
-    reservation_time = models.DateTimeField(auto_now_add=True)
-    preferred_time = models.DateTimeField()
+class Queue(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=20,
         choices=[
@@ -57,23 +60,46 @@ class QueueParticipant(models.Model):
         ],
         default='pending',
     )
-    joined_at = models.DateTimeField(auto_now_add=True)
-    exited_at = models.DateTimeField(null=True)
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateField(auto_now_add=True)
+    request_number = models.IntegerField()
+    slot = models.ForeignKey(Slot, on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ("date","request_number")
 
-class Queue(models.Model):
-    STATUS = (
-        ("open","OPEN"),
-        ("closed","CLOSED"),
-        ("full","FULL"),
-        )
-    estimated_wait_time = models.PositiveIntegerField(blank=True)
-    service = models.OneToOneField(Services, on_delete=models.CASCADE)
-    current_wait_time = models.DateTimeField()
-    max_capacity = models.IntegerField(validators=[MaxValueValidator(20)])
-    queue_status = models.CharField(choices=STATUS, max_length=10, blank=True)
-    current_queue_size = models.IntegerField(blank=True)
-    participants = models.ManyToManyField(User, through=QueueParticipant)
+# class QueueParticipant(models.Model):
+#     participant = models.ForeignKey(User,on_delete=models.CASCADE)
+#     queue = models.ForeignKey("Queue", on_delete=models.CASCADE)
+#     reservation_time = models.DateTimeField(auto_now_add=True)
+#     preferred_time = models.DateTimeField()
+#     status = models.CharField(
+#         max_length=20,
+#         choices=[
+#             ('pending', 'Pending'),
+#             ('in_progress', 'In Progress'),
+#             ('completed', 'Completed'),
+#             ('canceled', 'Canceled'),
+#         ],
+#         default='pending',
+#     )
+#     joined_at = models.DateTimeField(auto_now_add=True)
+#     exited_at = models.DateTimeField(null=True)
 
-    def __str__(self) -> str:
-        return f"Queue for the service {self.service.name}"
+# class Queue(models.Model):
+#     STATUS = (
+#         ("open","OPEN"),
+#         ("closed","CLOSED"),
+#         ("full","FULL"),
+#         )
+#     estimated_wait_time = models.PositiveIntegerField(blank=True)
+#     service = models.OneToOneField(Services, on_delete=models.CASCADE)
+#     current_wait_time = models.DateTimeField()
+#     max_capacity = models.IntegerField(validators=[MaxValueValidator(20)])
+#     queue_status = models.CharField(choices=STATUS, max_length=10, blank=True)
+#     current_queue_size = models.IntegerField(blank=True)
+#     participants = models.ManyToManyField(User, through=QueueParticipant)
+
+#     def __str__(self) -> str:
+#         return f"Queue for the service {self.service.name}"
     
