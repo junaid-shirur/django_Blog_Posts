@@ -14,5 +14,5 @@ class SlotSerializer(serializers.ModelSerializer):
 class QueueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Queue
-        fields = ['id', 'slot', 'date', 'user']
+        fields = ['id', 'slot', 'date', 'user','request_number']
 
