@@ -87,11 +87,8 @@ def joinQueue(request):
             status='in_progress',
             date=timezone.now().date(),
             slot=slot,
+            request_number=Queue.objects.get(slot=slot).request_number + 1
         )
-
-        # # Increment current_queue_size atomically
-        slot.request_number = slot.request_number + 1
-        slot.save()
 
         serializer = QueueSerializer(queue)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

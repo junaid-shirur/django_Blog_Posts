@@ -16,7 +16,6 @@ class Slot(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     capacity = models.IntegerField(max_length=5)
-    request_number = models.IntegerField(default=1)
     service = models.ForeignKey("Services", on_delete=models.CASCADE)
 
 class Services(models.Model):
@@ -66,6 +65,7 @@ class Queue(models.Model):
     date = models.DateField()
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateField(auto_now_add=True)
+    request_number = models.IntegerField(default=1)
     slot = models.ForeignKey(Slot, on_delete=models.CASCADE)
 
     
