@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from datetime import date, timedelta
+from django.db.models import Max
 from django.db import transaction
 from django.db.models import F
 import datetime
@@ -85,12 +85,16 @@ def joinQueue(request):
 
     # Create a queue reservation
     with transaction.atomic():
+        max_request_number = Queue.objects.filter(slot=slot).aggregate(Max('request_number')).get('request_number') or 0
+
+        # Increment the request_number by 1
+        new_request_number = max_request_number + 1
         queue = Queue.objects.create(
             user=request.user,
             status='in_progress',
             date=timezone.now().date(),
             slot=slot,
-            request_number=Queue.objects.get(slot=slot).request_number + 1
+            request_number=new_request_number
         )
 
         serializer = QueueSerializer(queue)
