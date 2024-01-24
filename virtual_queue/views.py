@@ -50,7 +50,10 @@ def joinQueue(request):
     if not service_id or not preffered_slot:
         return Response("Please provide both service_id and preffered_slot in the request data", status=status.HTTP_400_BAD_REQUEST)
 
-    service = Services.objects.get(id=service_id)
+    try:
+        service = Services.objects.get(id=service_id)
+    except Services.DoesNotExist:
+        return Response("Please check the service you've selected", status=status.HTTP_400_BAD_REQUEST)
 
     # Assuming preffered_slot is a string representing a slot, e.g., 'morning'
     try:
