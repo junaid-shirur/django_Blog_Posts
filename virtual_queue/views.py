@@ -4,7 +4,6 @@ from .models import User,Services,Queue, Slot
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Max
 from django.db import transaction
@@ -55,7 +54,6 @@ def joinQueue(request):
     except Services.DoesNotExist:
         return Response("Please check the service you've selected", status=status.HTTP_400_BAD_REQUEST)
 
-    # Assuming preffered_slot is a string representing a slot, e.g., 'morning'
     try:
         slot = Slot.objects.get(service=service, slot=preffered_slot)
     except Slot.DoesNotExist:
@@ -67,7 +65,6 @@ def joinQueue(request):
             capacity=5,  # Set the initial capacity for the new slot
         )
 
-    # Check if someone has already reserved the queue for the same service, date, and slot
     existing_reservation = Queue.objects.filter(
         user=request.user,
         slot=slot,
@@ -77,17 +74,12 @@ def joinQueue(request):
     if existing_reservation:
         return Response(f'You already have an in-progress reservation for the service {service.name} in the {preffered_slot} slot', status=status.HTTP_400_BAD_REQUEST)
 
-    # Check if the preferred slot is available
     if Queue.objects.filter(date=timezone.now().date(), slot=slot, status='in_progress').count() >= slot.capacity :
         return Response(f'The {preffered_slot} slot for {service.name} is currently full', status=status.HTTP_400_BAD_REQUEST)
 
-    # Generate a unique queue token (you may use a more sophisticated method)
-
-    # Create a queue reservation
     with transaction.atomic():
         max_request_number = Queue.objects.filter(slot=slot).aggregate(Max('request_number')).get('request_number') or 0
 
-        # Increment the request_number by 1
         new_request_number = max_request_number + 1
         queue = Queue.objects.create(
             user=request.user,
