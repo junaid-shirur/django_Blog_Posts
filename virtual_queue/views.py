@@ -78,7 +78,7 @@ def joinQueue(request):
         return Response(f'The {preffered_slot} slot for {service.name} is currently full', status=status.HTTP_400_BAD_REQUEST)
 
     with transaction.atomic():
-        max_request_number = Queue.objects.filter(slot=slot).aggregate(Max('request_number')).get('request_number') or 0
+        max_request_number = Queue.objects.filter(slot=slot).count()
 
         new_request_number = max_request_number + 1
         queue = Queue.objects.create(
@@ -92,3 +92,7 @@ def joinQueue(request):
         serializer = QueueSerializer(queue)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def exitQueue(request):
+    pass
