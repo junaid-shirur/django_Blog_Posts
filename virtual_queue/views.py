@@ -95,4 +95,11 @@ def joinQueue(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def exitQueue(request):
-    pass
+    try:
+        queue_entry = Queue.objects.get(user=request.user, status='in_progress')
+    except Queue.DoesNotExist:
+        return Response({"message": "No active queue entry found for the user"}, status=status.HTTP_404_NOT_FOUND)
+    queue_entry.status = 'canceled'  
+    queue_entry.save()
+
+    return Response({"message": "Successfully exited and canceled the queue"}, status=status.HTTP_200_OK)
